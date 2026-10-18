@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Mission : {{ contract.title }} - TrustBridge AI{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-5xl mx-auto">
+    <!-- Breadcrumb & Status -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+        <div>
+            <a href="{% url 'dashboard' %}" class="text-xs text-indigo-400 hover:text-indigo-300">&larr; Retour au Dashboard</a>
+            <h1 class="text-3xl font-extrabold text-white mt-1">{{ contract.title }}</h1>
+            <p class="text-sm text-slate-400">
+                Client : <strong class="text-slate-200">{{ contract.client.username }}</strong> &bull;
+                Freelance : <strong class="text-slate-200">{{ contract.freelance.username }}</strong> ({{ contract.freelance.paypal_email|default:"Email PayPal manquant" }})
+            </p>
+        </div>
+
+        <div class="text-right flex sm:flex-col items-center sm:items-end justify-between">
+            <span class="text-2xl font-black text-emerald-400 font-mono">{{ contract.amount }} {{ contract.currency }}</span>
+            <span class="text-xs px-3 py-1 rounded-full font-mono mt-1
+                {% if contract.status == 'FUNDED' %}bg-blue-500/20 text-blue-300 border border-blue-500/30
+                {% elif contract.status == 'APPROVED' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
+                {% elif contract.status == 'PAID_OUT' %}bg-emerald-600/30 text-emerald-200 border border-emerald-500/50
+                {% elif contract.status == 'DELIVERED' %}bg-amber-500/20 text-amber-300 border border-amber-500/30
+                {% else %}bg-slate-700 text-slate-300{% endif %}">
+                {{ contract.get_status_display }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Actions Bar -->
+    <div class="bg-slate-800/60 border border-slate-700 p-6 rounded-xl flex flex-wrap items-center justify-between gap-4">
+        <div>
+            <div class="text-sm font-semibold text-white">État du Séquestre PayPal</div>
+            <div class="text-xs text-slate-400 mt-0.5">
+                {% if contract.paypal_capture_id %}
+                    ID Capture : <code class="text-indigo-300 font-mono">{{ contract.paypal_capture_id }}</code>
+                {% elif contract.paypal_order_id %}
+                    ID Ordre : <code class="text-indigo-300 font-mono">{{ contract.paypal_order_id }}</code>
+                {% else %}
+                    Fonds non déposés
+                {% endif %}
+                {% if contract.paypal_payout_batch_id %}
+                    &bull; Versement Payouts : <code class="text-emerald-300 font-mono">{{ contract.paypal_payout_batch_id }}</code>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            {% if is_client and contract.status == 'AWAITING_PAYMENT' %}
+            <form method="POST" action="{% url 'fund_escrow' contract.id %}">
+                {% csrf_token %}
+                <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm shadow-lg shadow-blue-600/20 transition">
+                    Déposer {{ contract.amount }} {{ contract.currency }} sous séquestre PayPal
+                </button>
+            </form>
+            {% endif %}
+
+            {% if is_freelance and contract.status == 'FUNDED' %}
+            <a href="{% url 'submit_deliverable' contract.id %}" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm shadow-lg shadow-indigo-600/20 transition">
+                Soumettre un livrable pour audit IA &rarr;
+            </a>
+            {% endif %}
+
+            {% if is_client and contract.status == 'APPROVED' %}
+            <form method="POST" action="{% url 'release_funds_view' contract.id %}">
+                {% csrf_token %}
+                <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm shadow-lg shadow-emerald-600/20 transition">
+                    Libérer les fonds (PayPal Payouts)
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Contract Specifications & Acceptance Criteria -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-slate-800/40 border border-slate-800 p-6 rounded-xl space-y-3">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
+                Cahier des charges
+            </h3>
+            <div class="text-sm text-slate-300 whitespace-pre-line leading-relaxed">
+                {{ contract.description }}
+            </div>
+        </div>
+
+        <div class="bg-slate-800/40 border border-slate-800 p-6 rounded-xl space-y-3">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                Critères d'acceptation (Audit Gemini)
+            </h3>
+            <div class="text-sm text-slate-300 whitespace-pre-line leading-relaxed bg-slate-900/60 p-4 rounded-lg border border-slate-800/60 font-mono text-xs">
+                {{ contract.acceptance_criteria }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Deliverables & AI Reports Section -->
+    <div class="space-y-4">
+        <h2 class="text-xl font-bold text-white">Historique des Livrables & Audits IA</h2>
+
+        {% if deliverables %}
+            {% for deliverable in deliverables %}
+            <div class="bg-slate-800/40 border border-slate-800 rounded-xl p-6 space-y-6">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div>
+                        <span class="text-lg font-bold text-white">Version {{ deliverable.version }}</span>
+                        <span class="text-xs text-slate-400 ml-2">Soumis le {{ deliverable.submitted_at|date:"d M Y à H:i" }}</span>
+                    </div>
+                    {% if deliverable.repository_url %}
+                    <a href="{{ deliverable.repository_url }}" target="_blank" class="text-xs text-indigo-400 hover:underline">
+                        Dépôt de code &rarr;
+                    </a>
+                    {% endif %}
+                </div>
+
+                {% if deliverable.deliverable_content %}
+                <div class="space-y-1">
+                    <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Extrait du livrable :</div>
+                    <pre class="bg-slate-900 p-3 rounded-lg text-xs text-slate-300 overflow-x-auto font-mono max-h-48">{{ deliverable.deliverable_content }}</pre>
+                </div>
+                {% endif %}
+
+                <!-- AI Report Card -->
+                {% if deliverable.ai_report %}
+                {% with report=deliverable.ai_report %}
+                <div class="bg-slate-900/90 border {% if report.is_passing %}border-emerald-500/40{% else %}border-amber-500/40{% endif %} rounded-xl p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">
+                                AI
+                            </div>
+                            <div>
+                                <div class="text-sm font-bold text-white">Rapport d'Audit Gemini 2.5 Flash</div>
+                                <div class="text-xs text-slate-400">Modèle : {{ report.model_name }}</div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-bold {% if report.is_passing %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30{% else %}bg-amber-500/20 text-amber-400 border border-amber-500/30{% endif %}">
+                                {{ report.get_verdict_display }}
+                            </span>
+                            <div class="text-right">
+                                <span class="text-2xl font-black {% if report.is_passing %}text-emerald-400{% else %}text-amber-400{% endif %}">
+                                    {{ report.score }}
+                                </span>
+                                <span class="text-xs text-slate-400">/100</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-sm text-slate-300 italic border-l-2 border-indigo-500 pl-3">
+                        "{{ report.executive_summary }}"
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-2">
+                        <div class="bg-emerald-950/20 border border-emerald-500/20 p-3 rounded-lg space-y-1">
+                            <strong class="text-emerald-400 font-semibold block">Points forts validés :</strong>
+                            <ul class="list-disc list-inside text-slate-300 space-y-0.5">
+                                {% for s in report.strengths %}
+                                <li>{{ s }}</li>
+                                {% empty %}
+                                <li>Critères de base pris en compte.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <div class="bg-amber-950/20 border border-amber-500/20 p-3 rounded-lg space-y-1">
+                            <strong class="text-amber-400 font-semibold block">Manquements ou révisions :</strong>
+                            <ul class="list-disc list-inside text-slate-300 space-y-0.5">
+                                {% for sc in report.shortcomings %}
+                                <li>{{ sc }}</li>
+                                {% empty %}
+                                <li>Aucun manquement critique identifié.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+        <p class="text-sm text-slate-400 py-4">Aucun livrable n'a encore été soumis pour cette mission.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

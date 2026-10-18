@@ -1,0 +1,6 @@
+{
+  "name": "TrustBridge AI - Escrow Intelligent & Django Architecture",
+  "description": "Plateforme de séquestre intelligent pour freelances avec vérification des livrables par l'IA Google Gemini et intégration PayPal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

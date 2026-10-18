@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Connexion - TrustBridge AI{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto py-12 space-y-6">
+    <div class="text-center space-y-2">
+        <h1 class="text-2xl font-bold text-white">Connexion à TrustBridge AI</h1>
+        <p class="text-sm text-slate-400">Accédez à votre espace Client ou Freelance sécurisé.</p>
+    </div>
+
+    <form method="POST" class="bg-slate-800/50 border border-slate-800 rounded-xl p-6 space-y-4">
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="p-3 rounded-lg bg-rose-950/40 border border-rose-500/30 text-rose-200 text-xs">
+            Nom d'utilisateur ou mot de passe incorrect.
+        </div>
+        {% endif %}
+
+        <div class="space-y-1">
+            <label for="id_username" class="block text-xs font-medium text-slate-300">Nom d'utilisateur</label>
+            <input type="text" name="username" id="id_username" required
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div class="space-y-1">
+            <label for="id_password" class="block text-xs font-medium text-slate-300">Mot de passe</label>
+            <input type="password" name="password" id="id_password" required
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg text-sm shadow-lg shadow-indigo-600/20 transition">
+            Se connecter
+        </button>
+
+        <div class="text-center text-xs text-slate-500 pt-2 border-t border-slate-800">
+            Comptes de test hackathon : <code class="text-indigo-400">client_demo</code> ou <code class="text-purple-400">freelance_demo</code> (pass: <code class="text-slate-300">hackathon2026</code>)
+        </div>
+    </form>
+</div>
+{% endblock %}

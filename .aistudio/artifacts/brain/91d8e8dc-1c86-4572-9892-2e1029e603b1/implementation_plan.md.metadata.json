@@ -1,0 +1,6 @@
+{
+  "summary": "Plan d'implémentation pour TrustBridge AI : structure Django, configuration SQLite, variables d'environnement PayPal et Gemini, modèle User personnalisé (Client/Freelance) et commandes CLI.",
+  "updatedAt": "2026-10-18T21:54:51.158281950Z",
+  "requestFeedback": true,
+  "userFacing": true
+}

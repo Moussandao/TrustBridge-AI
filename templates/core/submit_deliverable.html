@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Soumettre un Livrable - {{ contract.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <div>
+        <a href="{% url 'contract_detail' contract.id %}" class="text-xs text-indigo-400 hover:text-indigo-300">&larr; Retour à la mission</a>
+        <h1 class="text-2xl font-bold text-white mt-1">Soumettre votre Livrable pour Audit IA</h1>
+        <p class="text-sm text-slate-400">
+            Mission : <strong class="text-slate-200">{{ contract.title }}</strong> &bull; Montant sécurisé : <span class="text-emerald-400 font-mono font-bold">{{ contract.amount }} {{ contract.currency }}</span>
+        </p>
+    </div>
+
+    <!-- Reminder of acceptance criteria -->
+    <div class="bg-indigo-950/30 border border-indigo-500/30 p-4 rounded-xl text-xs space-y-1">
+        <span class="font-bold text-indigo-300 block">Rappel des critères d'acceptation de l'arbitre IA :</span>
+        <p class="text-slate-300 font-mono whitespace-pre-line">{{ contract.acceptance_criteria }}</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="bg-slate-800/50 border border-slate-800 rounded-xl p-6 space-y-6">
+        {% csrf_token %}
+
+        <div class="space-y-2">
+            <label for="repository_url" class="block text-sm font-medium text-slate-200">Lien du dépôt GitHub / GitLab (Optionnel)</label>
+            <input type="url" name="repository_url" id="repository_url" placeholder="https://github.com/freelance/trustbridge-api"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 font-mono">
+        </div>
+
+        <div class="space-y-2">
+            <label for="deliverable_content" class="block text-sm font-medium text-slate-200">
+                Code source, résumé technique ou extraits de validation
+            </label>
+            <textarea name="deliverable_content" id="deliverable_content" rows="6" required
+                placeholder="Collez ici le code source développé, la sortie des tests unitaires ou la documentation technique..."
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-indigo-500"></textarea>
+            <p class="text-xs text-slate-400">Ce contenu sera directement analysé par Gemini 2.5 Flash.</p>
+        </div>
+
+        <div class="space-y-2">
+            <label for="file" class="block text-sm font-medium text-slate-200">Fichier archive zip ou document (Optionnel)</label>
+            <input type="file" name="file" id="file" class="text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-indigo-400 hover:file:bg-slate-700">
+        </div>
+
+        <div class="space-y-2">
+            <label for="notes" class="block text-sm font-medium text-slate-200">Notes pour le client et l'IA</label>
+            <textarea name="notes" id="notes" rows="2" placeholder="Précisez les instructions d'installation ou les choix d'architecture..."
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+
+        <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
+            <a href="{% url 'contract_detail' contract.id %}" class="text-slate-400 hover:text-white text-sm">Annuler</a>
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm shadow-lg shadow-indigo-600/20 transition">
+                Soumettre et lancer l'audit IA instantané &rarr;
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

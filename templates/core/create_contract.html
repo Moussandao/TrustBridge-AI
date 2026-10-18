@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer une Mission sous Séquestre - TrustBridge AI{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <div>
+        <a href="{% url 'dashboard' %}" class="text-xs text-indigo-400 hover:text-indigo-300">&larr; Retour au Dashboard</a>
+        <h1 class="text-2xl font-bold text-white mt-1">Créer une Mission & Configurer l'Escrow</h1>
+        <p class="text-sm text-slate-400">
+            Définissez les objectifs précis et les critères d'acceptation qui seront vérifiés par l'IA Gemini.
+        </p>
+    </div>
+
+    <form method="POST" class="bg-slate-800/50 border border-slate-800 rounded-xl p-6 space-y-6">
+        {% csrf_token %}
+
+        <div class="space-y-2">
+            <label for="title" class="block text-sm font-medium text-slate-200">Titre de la mission</label>
+            <input type="text" name="title" id="title" required placeholder="ex: Développement API REST Django & PayPal Webhooks"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="space-y-2">
+                <label for="amount" class="block text-sm font-medium text-slate-200">Montant du séquestre</label>
+                <input type="number" step="0.01" min="1" name="amount" id="amount" required placeholder="500.00"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 font-mono">
+            </div>
+            <div class="space-y-2">
+                <label for="currency" class="block text-sm font-medium text-slate-200">Devise</label>
+                <select name="currency" id="currency" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500">
+                    <option value="EUR">EUR (€)</option>
+                    <option value="USD">USD ($)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            <label for="freelance_id" class="block text-sm font-medium text-slate-200">Freelance assigné</label>
+            <select name="freelance_id" id="freelance_id" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500">
+                <option value="">-- Sélectionnez un freelance --</option>
+                {% for f in freelances %}
+                <option value="{{ f.id }}">{{ f.username }} ({{ f.paypal_email|default:"Sans email PayPal" }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="space-y-2">
+            <label for="description" class="block text-sm font-medium text-slate-200">Description générale & contexte</label>
+            <textarea name="description" id="description" rows="3" required placeholder="Détaillez le projet et le périmètre attendu..."
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+
+        <div class="space-y-2">
+            <label for="acceptance_criteria" class="block text-sm font-medium text-slate-200">
+                Critères d'acceptation stricts pour l'arbitrage IA Gemini
+            </label>
+            <textarea name="acceptance_criteria" id="acceptance_criteria" rows="4" required
+                placeholder="1. Présence d'un endpoint /api/escrow/ avec validation des jetons&#10;2. Gestion propre des erreurs 400 et 500&#10;3. Tests unitaires automatisés inclus avec couverture minimale"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white text-sm font-mono focus:outline-none focus:border-indigo-500"></textarea>
+            <p class="text-xs text-slate-400">
+                L'IA évaluera le livrable par rapport à cette liste exacte pour décider de la libération des fonds.
+            </p>
+        </div>
+
+        <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
+            <a href="{% url 'dashboard' %}" class="text-slate-400 hover:text-white text-sm">Annuler</a>
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition">
+                Créer la mission & passer au séquestre &rarr;
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

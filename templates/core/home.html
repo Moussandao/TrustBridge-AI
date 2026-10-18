@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}TrustBridge AI - Séquestre Intelligent pour Freelances & Clients{% endblock %}
+
+{% block content %}
+<div class="py-12 space-y-16">
+    <!-- Hero Section -->
+    <div class="text-center max-w-3xl mx-auto space-y-6">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            FinTech x Google Gemini Hackathon MVP
+        </div>
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+            Le Séquestre Intelligent qui protège <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Freelances & Clients</span>.
+        </h1>
+        <p class="text-slate-400 text-lg">
+            Verrouillez les fonds via PayPal en toute sécurité. Notre IA Gemini 2.5 Flash analyse la conformité des livrables selon les critères d'acceptation du contrat avant de libérer le paiement.
+        </p>
+        <div class="flex items-center justify-center gap-4 pt-2">
+            <a href="{% url 'dashboard' %}" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 py-3 rounded-lg shadow-lg shadow-indigo-600/30 transition">
+                Accéder au Dashboard
+            </a>
+            <a href="/admin/" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium px-6 py-3 rounded-lg border border-slate-700 transition">
+                Console Admin Django
+            </a>
+        </div>
+    </div>
+
+    <!-- 3-Step Escrow Architecture -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-slate-800/40 border border-slate-800 p-6 rounded-xl space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">1</div>
+            <h3 class="font-semibold text-lg text-white">Séquestre PayPal v2</h3>
+            <p class="text-sm text-slate-400">
+                Le client valide la mission et consigne les fonds sur l'escrow PayPal sécurisé. Le freelance démarre en toute sérénité.
+            </p>
+        </div>
+        <div class="bg-slate-800/40 border border-slate-800 p-6 rounded-xl space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold">2</div>
+            <h3 class="font-semibold text-lg text-white">Audit IA Gemini 2.5 Flash</h3>
+            <p class="text-sm text-slate-400">
+                Dès soumission du livrable (code, archive, repo), l'IA vérifie point par point les critères d'acceptation et délivre un rapport chiffré.
+            </p>
+        </div>
+        <div class="bg-slate-800/40 border border-slate-800 p-6 rounded-xl space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">3</div>
+            <h3 class="font-semibold text-lg text-white">Payout Instantané</h3>
+            <p class="text-sm text-slate-400">
+                Le livrable conforme déclenche immédiatement le versement PayPal Payouts sur l'adresse email PayPal du freelance.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

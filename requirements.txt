@@ -1,0 +1,21 @@
+# Core Django framework
+Django>=5.1.0,<6.0.0
+
+# HTTP Client for PayPal REST API (OAuth2, Orders, Payouts)
+requests>=2.32.3
+
+# Google Gemini Official GenAI SDK
+google-genai>=1.0.0
+
+# Environment variables management (.env file)
+python-dotenv>=1.0.1
+
+# Image handling for avatar/deliverable attachments
+Pillow>=10.4.0
+
+# WSGI & ASGI production servers
+gunicorn>=23.0.0
+uvicorn>=0.30.0
+
+# Security and CORS (if consumed by external frontends)
+django-cors-headers>=4.4.0

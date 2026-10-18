@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard {{ user_role }} - TrustBridge AI{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Top KPI Bar & Role Switcher Header -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                        Tableau de Bord {{ user_role }}
+                    </h1>
+                    <span class="text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider {% if is_client %}bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30{% else %}bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30{% endif %}">
+                        {{ user.username }}
+                    </span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    {% if is_client %}
+                        Gérez vos contrats de séquestre, payez via PayPal Smart Buttons et autorisez les déblocages Payouts.
+                    {% else %}
+                        Consultez vos jalons assignés, soumettez vos livrables et obtenez l'audit de conformité Gemini en temps réel.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- KPI Counters -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Séquestre Actif</span>
+                    <span class="text-lg font-black text-blue-600 dark:text-blue-400 font-mono">${{ stats.total_escrow_locked|floatformat:2 }}</span>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Total Versé</span>
+                    <span class="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">${{ stats.total_paid_out|floatformat:2 }}</span>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">En Audit IA</span>
+                    <span class="text-lg font-black text-amber-500 font-mono">{{ stats.pending_audits }}</span>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Validés Gemini</span>
+                    <span class="text-lg font-black text-indigo-600 dark:text-indigo-400 font-mono">{{ stats.approved_count }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects & Milestones Section -->
+    <div class="space-y-6">
+        {% if projects %}
+            {% for project in projects %}
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+                <!-- Project Header -->
+                <div class="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400">PROJET #{{ project.id }}</span>
+                            <span class="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider
+                                {% if project.status == 'IN_PROGRESS' %}bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20
+                                {% elif project.status == 'COMPLETED' %}bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20
+                                {% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400{% endif %}">
+                                {{ project.get_status_display }}
+                            </span>
+                        </div>
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ project.title }}</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                            Client : <strong class="text-slate-700 dark:text-slate-300">{{ project.client.username }}</strong> &bull;
+                            Freelance : <strong class="text-slate-700 dark:text-slate-300">{{ project.freelance.username }}</strong>
+                            (PayPal : <code class="text-indigo-600 dark:text-indigo-400 font-mono">{{ project.freelance.paypal_email|default:"Non renseigné" }}</code>)
+                        </p>
+                    </div>
+
+                    <div class="text-right">
+                        <span class="text-xs text-slate-400 block uppercase font-bold tracking-wider">Montant Total Projet</span>
+                        <span class="text-2xl font-black text-slate-900 dark:text-white font-mono">${{ project.total_amount|floatformat:2 }} {{ project.currency }}</span>
+                    </div>
+                </div>
+
+                <!-- Milestones List -->
+                <div class="p-6 space-y-6">
+                    <h3 class="text-xs uppercase font-extrabold text-slate-400 tracking-wider">
+                        Jalons de Séquestre (Milestones) &mdash; {{ project.milestones.count }} jalon(s)
+                    </h3>
+
+                    <div class="space-y-4">
+                        {% for milestone in project.milestones.all %}
+                        <div class="bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition">
+                            <!-- Milestone Title Bar -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-bold text-slate-900 dark:text-white">{{ milestone.title }}</span>
+                                        <!-- Milestone Status Badges -->
+                                        {% if milestone.status == 'LOCKED' %}
+                                            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                                🔒 Verrouillé
+                                            </span>
+                                        {% elif milestone.status == 'FUNDED' %}
+                                            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-500/30 flex items-center gap-1">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                                                💳 Séquestre PayPal Actif
+                                            </span>
+                                        {% elif milestone.status == 'SUBMITTED' %}
+                                            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30">
+                                                ⏳ Livrable Soumis
+                                            </span>
+                                        {% elif milestone.status == 'APPROVED' %}
+                                            <span class="text-[11px] font-bold px-3 py-0.5 rounded-full bg-gradient-to-r from-emerald-500/20 to-indigo-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-400 dark:border-emerald-500/40 flex items-center gap-1 shadow-sm">
+                                                ✨ AI Approved by Gemini
+                                            </span>
+                                        {% elif milestone.status == 'PAID' %}
+                                            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-teal-100 dark:bg-teal-500/20 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-500/40">
+                                                ✅ Fonds Versés (Payouts)
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                        {{ milestone.description|default:"Aucune description détaillée." }}
+                                    </p>
+                                </div>
+
+                                <div class="text-right flex items-center sm:block justify-between">
+                                    <span class="text-lg font-black text-slate-900 dark:text-white font-mono">${{ milestone.amount|floatformat:2 }}</span>
+                                    {% if milestone.paypal_order_id %}
+                                    <div class="text-[10px] text-slate-400 font-mono">
+                                        PayPal Order: <span class="text-indigo-600 dark:text-indigo-400">{{ milestone.paypal_order_id }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- CLIENT ACTIONS: PayPal Smart Buttons or Payout Release -->
+                            {% if is_client %}
+                                {% if milestone.status == 'LOCKED' %}
+                                <div class="pt-2 border-t border-slate-200 dark:border-slate-800/80">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div class="text-xs text-slate-500 dark:text-slate-400">
+                                            Déposez <strong class="text-slate-800 dark:text-slate-200 font-mono">${{ milestone.amount }} {{ project.currency }}</strong> sous séquestre PayPal pour débloquer le jalon.
+                                        </div>
+
+                                        <!-- PayPal Smart Buttons JS Container -->
+                                        <div class="w-full sm:w-64">
+                                            <div id="paypal-button-container-{{ milestone.id }}"></div>
+                                            <!-- Fallback Instant Simulation Button for Offline/Hackathon -->
+                                            <button onclick="simulateClientEscrowFunding({{ milestone.id }})" type="button" class="mt-2 w-full text-center text-[11px] text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 underline">
+                                                (Simulation Sandbox rapide)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% elif milestone.status == 'APPROVED' %}
+                                <div class="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-emerald-50/50 dark:bg-emerald-950/20 p-3 rounded-lg border border-emerald-200 dark:border-emerald-500/20">
+                                    <div class="text-xs text-emerald-800 dark:text-emerald-200">
+                                        L'arbitre IA Gemini a validé le livrable. Vous pouvez autoriser le versement PayPal Payouts.
+                                    </div>
+                                    <form method="POST" action="{% url 'release_milestone_payout' milestone.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-lg shadow-sm shadow-emerald-600/30 transition">
+                                            Débloquer les fonds (PayPal Payouts) &rarr;
+                                        </button>
+                                    </form>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+
+                            <!-- FREELANCE ACTIONS: Deliverable Submission Form -->
+                            {% if is_freelance and milestone.status == 'FUNDED' or is_freelance and milestone.status == 'SUBMITTED' %}
+                            <div class="pt-3 border-t border-slate-200 dark:border-slate-800">
+                                <details class="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden" {% if milestone.status == 'FUNDED' %}open{% endif %}>
+                                    <summary class="cursor-pointer p-3 text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                                        <span>📤 Soumettre un Livrable & Déclencher la Vérification IA Gemini</span>
+                                        <span class="text-slate-400 group-open:rotate-180 transition-transform">&darr;</span>
+                                    </summary>
+
+                                    <form method="POST" action="{% url 'submit_deliverable' milestone.id %}" class="p-4 space-y-4 border-t border-slate-200 dark:border-slate-800">
+                                        {% csrf_token %}
+                                        <div class="space-y-1">
+                                            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                                                Code source développé ou compte-rendu technique :
+                                            </label>
+                                            <textarea name="submission_text" rows="5" required
+                                                placeholder="Collez ici le code source, la documentation ou le résumé des fonctionnalités implémentées..."
+                                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+                                        </div>
+
+                                        <div class="space-y-1">
+                                            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                                                Lien du dépôt GitHub / GitLab (Optionnel) :
+                                            </label>
+                                            <input type="url" name="file_url" placeholder="https://github.com/freelance/projet-api"
+                                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500">
+                                        </div>
+
+                                        <div class="flex items-center justify-end">
+                                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-2.5 rounded-lg flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition">
+                                                <span>✨ Analyser avec Gemini</span> &rarr;
+                                            </button>
+                                        </div>
+                                    </form>
+                                </details>
+                            </div>
+                            {% endif %}
+
+                            <!-- LATEST DELIVERABLE & GEMINI AUDIT REPORT -->
+                            {% if milestone.latest_deliverable %}
+                            {% with deliv=milestone.latest_deliverable %}
+                            <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                        📄 Livrable soumis le {{ deliv.submitted_at|date:"d M Y à H:i" }}
+                                    </span>
+                                    {% if deliv.file_url %}
+                                    <a href="{{ deliv.file_url }}" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                                        Dépôt externe &rarr;
+                                    </a>
+                                    {% endif %}
+                                </div>
+
+                                <!-- AI Evaluation Result Card -->
+                                <div class="rounded-xl p-4 border {% if deliv.is_passing %}bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-500/30{% else %}bg-amber-50/60 dark:bg-amber-950/20 border-amber-300 dark:border-amber-500/30{% endif %} space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <!-- Gemini Logo Badge -->
+                                            <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-indigo-500 to-emerald-400 text-white font-bold text-[10px] flex items-center justify-center">
+                                                AI
+                                            </div>
+                                            <div>
+                                                <span class="text-xs font-black text-slate-900 dark:text-white">
+                                                    Rapport d'Arbitrage Gemini
+                                                </span>
+                                                <span class="text-[10px] text-slate-400 block font-mono">Modèle: {{ gemini_model }}</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-3">
+                                            {% if deliv.is_passing %}
+                                            <span class="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-600 text-white shadow-sm flex items-center gap-1">
+                                                ★ AI Approved by Gemini
+                                            </span>
+                                            {% else %}
+                                            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500 text-white">
+                                                ⚠️ Révisions Requises
+                                            </span>
+                                            {% endif %}
+                                            <div class="text-right">
+                                                <span class="text-xl font-black font-mono {% if deliv.is_passing %}text-emerald-600 dark:text-emerald-400{% else %}text-amber-500{% endif %}">
+                                                    {{ deliv.score|default:"--" }}
+                                                </span>
+                                                <span class="text-xs text-slate-400">/100</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {% if deliv.ai_feedback %}
+                                    <div class="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed bg-white/50 dark:bg-slate-900/60 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+                                        {{ deliv.ai_feedback }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endwith %}
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center space-y-3">
+                <p class="text-slate-500 dark:text-slate-400 text-sm">Aucun projet trouvé pour ce profil.</p>
+                <p class="text-xs text-slate-400">Exécutez <code class="text-indigo-500">python manage.py seed_demo</code> pour charger un projet et 3 jalons de test.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Webhook Integration Card -->
+    <div class="bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-3 text-xs">
+        <div class="flex items-center justify-between">
+            <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                <span>📡</span> Endpoint Webhook PayPal en écoute : <code class="text-indigo-600 dark:text-indigo-400 font-mono">/webhooks/paypal/</code>
+            </div>
+            <span class="text-emerald-600 dark:text-emerald-400 font-mono font-bold">200 OK Auto-Responder</span>
+        </div>
+        <p class="text-slate-500 dark:text-slate-400 leading-relaxed">
+            Écoute l'événement <code class="text-slate-700 dark:text-slate-300 font-mono">PAYMENT.CAPTURE.COMPLETED</code> de PayPal. Dès réception, le jalon passe automatiquement au statut <span class="text-blue-600 dark:text-blue-400 font-bold font-mono">FUNDED</span> sans rechargement de page.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- PayPal JS SDK for PayPal Smart Buttons -->
+<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency=USD"></script>
+
+<script>
+    // Initialisation des boutons PayPal Smart Buttons pour chaque jalon verrouillé
+    document.addEventListener("DOMContentLoaded", function() {
+        {% if is_client %}
+            {% for project in projects %}
+                {% for milestone in project.milestones.all %}
+                    {% if milestone.status == 'LOCKED' %}
+                        const containerId = "paypal-button-container-{{ milestone.id }}";
+                        if (document.getElementById(containerId) && window.paypal) {
+                            try {
+                                paypal.Buttons({
+                                    style: {
+                                        layout: 'horizontal',
+                                        color:  'gold',
+                                        shape:  'rect',
+                                        label:  'pay',
+                                        height: 38
+                                    },
+                                    createOrder: function(data, actions) {
+                                        return fetch("{% url 'create_paypal_order_ajax' milestone.id %}", {
+                                            method: "POST",
+                                            headers: {
+                                                "Content-Type": "application/json",
+                                                "X-CSRFToken": getCsrfToken()
+                                            }
+                                        })
+                                        .then(res => res.json())
+                                        .then(orderData => {
+                                            if (orderData.error) throw new Error(orderData.error);
+                                            return orderData.orderID;
+                                        });
+                                    },
+                                    onApprove: function(data, actions) {
+                                        return fetch("{% url 'capture_paypal_order_ajax' milestone.id %}", {
+                                            method: "POST",
+                                            headers: {
+                                                "Content-Type": "application/json",
+                                                "X-CSRFToken": getCsrfToken()
+                                            },
+                                            body: JSON.stringify({ orderID: data.orderID })
+                                        })
+                                        .then(res => res.json())
+                                        .then(details => {
+                                            window.location.reload();
+                                        });
+                                    },
+                                    onError: function(err) {
+                                        console.error("Erreur PayPal Button:", err);
+                                        alert("Erreur PayPal Smart Buttons. Utilisez le bouton de simulation Sandbox en cas de test hors ligne.");
+                                    }
+                                }).render("#" + containerId);
+                            } catch (e) {
+                                console.warn("Initialisation PayPal JS SDK:", e);
+                            }
+                        }
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+        {% endif %}
+    });
+
+    // Helper CSRF
+    function getCsrfToken() {
+        const name = "csrftoken";
+        const cookies = document.cookie.split(";");
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + "=")) {
+                return decodeURIComponent(cookie.substring(name.length + 1));
+            }
+        }
+        return "";
+    }
+
+    // Simulation instantanée de séquestre (mode Sandbox rapide)
+    function simulateClientEscrowFunding(milestoneId) {
+        fetch(`/api/milestones/${milestoneId}/capture-order/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrfToken()
+            },
+            body: JSON.stringify({ orderID: `ORDER-SANDBOX-DEMO-${Date.now()}` })
+        })
+        .then(res => res.json())
+        .then(() => window.location.reload())
+        .catch(err => {
+            console.error(err);
+            window.location.reload();
+        });
+    }
+</script>
+{% endblock %}
